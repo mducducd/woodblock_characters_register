@@ -27,7 +27,7 @@ def normalize_print_image(print_image, image_size=256):
     gray = cv2.cvtColor(print_image, cv2.COLOR_BGR2GRAY)
     ret, bin_print_image = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
     character_image = normalize_mask(bin_print_image)
-    cv2.imwrite('ss.png', character_image)
+    
     # kernel = np.ones((3, 3), np.uint8)
     # character_image = cv2.erode(character_image, kernel, iterations=1)
     return character_image
@@ -83,20 +83,9 @@ def normalize_depth_image_v2(depth_image, print_image):
     # hsvImg[..., 2] = np.where((255 - vValue) < value, 255, vValue + value)
     # gray = cv2.cvtColor(hsvImg, cv2.COLOR_HSV2BGR)
     depth_image = cv2.cvtColor(depth_image, cv2.COLOR_BGR2GRAY)
-    #im_show([depth_image]) 
+
     best_diff = 1
     best_score = -1
-    # for th in range(60, 200):
-    #     try:
-    #       ret, bin_depth_image = cv2.threshold(copy.deepcopy(depth_image), th, 255, cv2.THRESH_BINARY_INV)
-    #       # bin_depth_image = remove_noise(bin_depth_image)
-    #       score = sim_score(bin_print_image, bin_depth_image)
-    #       if score > best_score:
-    #           best_score = score
-    #           best_depth_image = bin_depth_image
-    #           best_thresh = th
-    #     except Exception:
-    #       continue
 
     for th in range(50, 140):
       try:
@@ -114,22 +103,7 @@ def normalize_depth_image_v2(depth_image, print_image):
         continue
 
     ret, best_depth_image = cv2.threshold(depth_image, best_thresh, 255, cv2.THRESH_BINARY_INV)
-    # cv2.imwrite('1.png', best_depth_image)
     num_iter = 0
-    # for i in range(1, 2):
-    #     try:
-    #         kernel = np.ones((3, 3), np.uint8)
-    #         if need_erode:
-    #             mor_depth_img = cv2.erode(copy.copy(best_depth_image), kernel, iterations = i)
-    #         else:
-    #             mor_depth_img = cv2.dilate(copy.copy(best_depth_image), kernel, iterations = i)
-    #         depth_dense, depth_character = estimate_dense_ratio(mor_depth_img)
-    #         if abs(depth_dense - print_dense) < best_diff:
-    #             best_diff = abs(depth_dense - print_dense)
-    #             best_depth_image = mor_depth_img
-    #             num_iter = i
-    #     except Exception:
-    #         continue
     return best_depth_image, bin_print_image, best_diff, best_thresh
 
 def normalize_depth_image_v3(depth_image, print_image):
@@ -162,7 +136,7 @@ def normalize_depth_image_v3(depth_image, print_image):
       except Exception:
         continue
 
-    # print(best_thresh, best_score)
+  
     ret, best_depth_image = cv2.threshold(gray2, best_thresh, 255, cv2.THRESH_BINARY_INV)
  
     return remove_noise(best_bin_depth_image), best_thresh, best_score
