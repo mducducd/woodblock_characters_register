@@ -66,15 +66,11 @@ def shift_character_in_canvas(bin_print_image, bin_depth_image):
                                 
                                 new_canvas_depth_image = cv2.copyMakeBorder(canvas_depth_image, top , bottom , left , right , cv2.BORDER_CONSTANT,value = 0)
                                 
-                                cv2.imwrite('2.png',new_canvas_depth_image)
                                 top, bottom, left, right = make_border(changeX + deltaX , changeY +  deltaY  , 'print')
                                 #top_delta, bottom_delta, left_delta, right_delta = make_border(delta_width, delta_height , 'print')
                                 new_canvas_print_image = cv2.copyMakeBorder(canvas_print_image, top , bottom , left , right , cv2.BORDER_CONSTANT,value = 0)
                                 
-                                cv2.imwrite('1.png',new_canvas_print_image)
-                                #print(new_canvas_depth_image.shape, new_canvas_print_image.shape)
                                 #compare current IOU
-                                
                                 currentIOU = get_iou_metric(new_canvas_depth_image, new_canvas_print_image)
                                 #print(currentIOU - prev)
                                 if currentIOU - prevIOU <= 0:
