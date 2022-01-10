@@ -169,7 +169,6 @@ def normalize_depth_image_v4(depth_image, print_image):
       except Exception:
         current_thresh += 1
         continue
-    print('ddd', list_ssim, list_dense_diff)
     current_ssim = 0
     for i in range(len(list_ssim)):
       if list_ssim[i] > current_ssim:# and list_dense_diff[i] < max_accepted_diff_dense:
