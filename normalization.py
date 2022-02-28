@@ -124,14 +124,15 @@ def normalize_depth_image_v3(depth_image, print_image):
 
     best_score = -1
     for th in range(90, 150):
+      best_thresh = th 
       try:
         ret, bin_depth_image = cv2.threshold(gray2, th, 255, cv2.THRESH_BINARY_INV)
         score, square2, dense_diff = sim_score(bin_print_image, bin_depth_image)
         if score > best_score and dense_diff < 0.05:
           best_score = score
-          best_square = square2
+#           best_square = square2
           best_thresh = th 
-          best_bin_depth_image = bin_depth_image
+#           best_bin_depth_image = bin_depth_image
           # best_dense_diff = dense_diff
       except Exception:
         continue
@@ -139,7 +140,7 @@ def normalize_depth_image_v3(depth_image, print_image):
   
     ret, best_depth_image = cv2.threshold(gray2, best_thresh, 255, cv2.THRESH_BINARY_INV)
  
-    return remove_noise(best_bin_depth_image), best_thresh, best_score
+    return remove_noise(best_depth_image), best_thresh, best_score
 
 def normalize_depth_image_v4(depth_image, print_image):
     """
