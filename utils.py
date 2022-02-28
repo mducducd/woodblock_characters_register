@@ -522,6 +522,7 @@ def sim_score(bin_print_image, bin_depth_image):
   for i in range(4):
     square2 = cv2.rotate(square2, cv2.cv2.ROTATE_90_CLOCKWISE)
     square2 = cv2.resize(square2, (square1.shape[1], square1.shape[0]))
+    best_square2 = square2
     # square2 = resize_image_to_square(square2)
     ssim_score = ssim(square1, square2)
     # iou_score = get_iou_metric(square1, square2)
