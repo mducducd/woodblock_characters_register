@@ -45,6 +45,7 @@ class ClickPlot:
         self.img1_o = img1
         self.img1 = img1
         self.img2 = img2
+        self._img1 = img1
         self.id = 0
         self.stack_image = added_image
 
@@ -54,7 +55,7 @@ class ClickPlot:
         self.retVal = {'comment': self.comment, 'x': None, 'y': None,
                        'subPlot': None}
 
-        self.sanityCheck()
+        # self.sanityCheck()
         self.supTitle = plt.suptitle("comment: %s" % self.comment)
         self.fig.canvas.mpl_connect('button_press_event', self.onClick)
         self.fig.canvas.mpl_connect('button_release_event', self.onRelease)
@@ -68,7 +69,7 @@ class ClickPlot:
         self.retVal['x'] = None
         self.retVal['y'] = None
         self.retVal['subPlot'] = None
-        for i in range(self.nSubPlots):
+        for i in range(self.nSubPlots - 2):
             subPlot = self.selectSubPlot(i)
             for marker in self.markers:
                 if marker in subPlot.lines:
@@ -147,33 +148,26 @@ class ClickPlot:
         for i in range(2):
             self.selectSubPlot(i).clear()
 
-    def add_image(self, img1, img2):
-        background = img2
-        overlay = img1
-
-        return cv2.addWeighted(background, 0.4, overlay, 0.1, 0)
-
-
     def generate_content(self):
         self.clearMarker()
 
 
 
-        self.stack_image = self.add_image(self.img1, self.img2)
+        self.stack_image = add_image(self.img1, self.img2)
 
-        for i in range(3):
+        for i in range(self.nSubPlots):
 
             if i + 1 == 1:
                 self.selectSubPlot(i).clear()
-                self.markers.append([plt.imshow(self.img1, cmap='gray'), plt.title('2D image', fontsize=18)])
+                self.markers.append([plt.imshow(self.img1), plt.title('2D image', fontsize=18)])
 
             if i + 1 == 2:
                 self.selectSubPlot(i).clear()
-                self.markers.append([plt.imshow(self.stack_image, cmap='gray'), plt.title('Stack transparent', fontsize=18)])
+                self.markers.append([plt.imshow(self.stack_image), plt.title('Stack transparent', fontsize=18)])
 
-            if i + 1 == 3:
+            if i + 1 == 4:
                 self.selectSubPlot(i).clear()
-                self.markers.append([plt.imshow(self.img2, cmap='gray'), plt.title('2D image', fontsize=18)])
+                self.markers.append([plt.imshow(multiply_image(self.img1, self.img2)), plt.title('Multiply Image', fontsize=18)])
 
     def onClick(self, event):
 
@@ -225,37 +219,48 @@ class ClickPlot:
             return
 
         if event.key == 'w':
-            self.draw_onKey('saved!')
+            self.generate_content()
+            self.draw_onKey('Auto aligning...')
+            x_l, y_l, _ = optimize_local(self.img1, self.img2)
+            self.img1 = shift_image(self.img1, x_l, y_l)
+
+            self.generate_content()
+            # self.draw_onKey('{}, {}'.format(np.mean(multiply_image(self.img1, self.img2)), optimize_local(self.img1, self.img2)))
+            self.draw_onKey('Auto aligned!')
             return
 
         if event.key == 'up':
-            self.img1 = shift_image(self.img1, 0, -1)
+            self.img1 = shift_image(self.img1, 0, -5)
+
             self.generate_content()
             self.draw_onKey('shifted up by 1')
 
             return
 
         if event.key == 'down':
-            self.img1 = shift_image(self.img1, 0, 1)
+            self.img1 = shift_image(self.img1, 0, 5)
+
             self.generate_content()
             self.draw_onKey('shifted down by 1')
             return
 
         if event.key == 'right':
-            self.img1 = shift_image(self.img1, 1, 0)
+            self.img1 = shift_image(self.img1, 5, 0)
+
             self.generate_content()
             self.draw_onKey('shifted right by 1')
             return
 
         if event.key == 'left':
-            self.img1 = shift_image(self.img1, -1, 0)
+            self.img1 = shift_image(self.img1, -5, 0)
+
             self.generate_content()
             self.draw_onKey('shifted left by 1')
             return
 
         if event.key == 'z':
             self.angle += 10
-            self.img1 = imutils.rotate(self.img1_o, self.angle)
+            self.img1 = imutils.rotate(self.img1, 10)
             self.generate_content()
 
             self.fig.canvas.draw()
@@ -264,7 +269,7 @@ class ClickPlot:
 
         if event.key == 'v':
             self.angle -= 10
-            self.img1 = imutils.rotate(self.img1_o, self.angle)
+            self.img1 = imutils.rotate(self.img1, -10)
             self.generate_content()
 
             self.fig.canvas.draw()
@@ -272,8 +277,8 @@ class ClickPlot:
             return
 
         if event.key == 'x':
-            self.angle += 1
-            self.img1 = imutils.rotate(self.img1_o, self.angle)
+            self.angle += 3
+            self.img1 = imutils.rotate(self.img1, 1)
             self.generate_content()
 
             self.fig.canvas.draw()
@@ -281,8 +286,8 @@ class ClickPlot:
             return
 
         if event.key == 'c':
-            self.angle -= 1
-            self.img1 = imutils.rotate(self.img1_o, self.angle)
+            self.angle -= 3
+            self.img1 = imutils.rotate(self.img1, -1)
             self.generate_content()
 
             self.fig.canvas.draw()
@@ -297,16 +302,25 @@ class ClickPlot:
             self.draw_onKey('Reset to origin')
             return
 
+        # if event.key == 't':
+        #     self.selectSubPlot(3).clear()
+        #     self.markers.append([plt.imshow(self.multiply_image(self.img1, self.img2)), plt.title('Multiply Image', fontsize=18)])
+        #     self.draw_onKey('Reset to origin')
+        #     return
+
         if event.key == 'd':
             self.clearMarker()
             self.reset_control()
 
             self.id += 1
-            self.img1 = 255 - cv2.imread(paths[self.id], 0)[:256, :]
-            self.img2 = 255 - cv2.imread(paths[self.id], 0)[512:, :]
-            self.stack_image = self.add_image(self.img1, self.img2)
+            self.img1 = 255 - cv2.imread(paths[self.id], 0)[512:, :]
+            self.img2 = 255 - cv2.imread(paths[self.id], 0)[:256, :]
+            self.stack_image = add_image(self.img1, self.img2)
             self.img1_o = self.img1
+
             self.generate_content()
+            self.selectSubPlot(2).clear()
+            self.markers.append([plt.imshow(self.img2), plt.title('2D image', fontsize=18)])
             self.draw_onKey('Next Image')
             return
 
@@ -315,11 +329,14 @@ class ClickPlot:
             self.reset_control()
 
             self.id -= 1
-            self.img1 = 255 - cv2.imread(paths[self.id], 0)[:256, :]
-            self.img2 = 255 - cv2.imread(paths[self.id], 0)[512:, :]
-            self.stack_image = self.add_image(self.img1, self.img2)
+            self.img1 = 255 - cv2.imread(paths[self.id], 0)[512:, :]
+            self.img2 = 255 - cv2.imread(paths[self.id], 0)[:256, :]
+            self.stack_image = add_image(self.img1, self.img2)
             self.img1_o = self.img1
+
             self.generate_content()
+            self.selectSubPlot(2).clear()
+            self.markers.append([plt.imshow(self.img2), plt.title('2D image', fontsize=18)])
             self.draw_onKey('previous Image')
             return
 
@@ -399,6 +416,14 @@ def showClickPlot(fig=None):
     cp = ClickPlot(fig)
     return cp.show()
 
+def add_image(img1, img2):
+    background = img1
+    overlay = img2
+
+    return cv2.addWeighted(background, 0.4, overlay, 0.1, 0)
+def multiply_image(img1, img2):
+    return cv2.bitwise_and(img1, img2)
+
 def shift_image(X, dx, dy):
     X = np.roll(X, dy, axis=0)
     X = np.roll(X, dx, axis=1)
@@ -412,6 +437,22 @@ def shift_image(X, dx, dy):
         X[:, dx:] = 0
     return X
 
+def optimize_local(img1, img2):
+    x_l, y_l, max_mean = 0, 0, 0
+    for angle in range(-5,5):
+        img1 = imutils.rotate(img1, angle)
+        for x in range(-10, 10):
+            for y in range(-10, 10):
+                _img1 = shift_image(img1, x, y)
+                img_mean = np.mean(multiply_image(_img1, img2))
+                # print(img_mean)
+                if max_mean < img_mean:
+                    max_mean = img_mean
+                    x_l = x
+                    y_l = y
+    return x_l, y_l, max_mean
+
+
 def absoluteFilePaths(directory):
     list = []
     for dirpath,_,filenames in os.walk(directory):
@@ -424,27 +465,23 @@ if __name__ == '__main__':
     img_path = args["src"]
 
     if '.png' in img_path:
-        img1 = 255 - cv2.imread(img_path, 0)[:256, :]
-        img2 = 255 - cv2.imread(img_path, 0)[512:, :]
+        img2 = 255 - cv2.imread(img_path, 0)[:256, :]
+        img1 = 255 - cv2.imread(img_path, 0)[512:, :]
 
-        background = img2
-        overlay = img1
-
-        added_image = cv2.addWeighted(background, 0.4, overlay, 0.1, 0)
+        added_image = add_image(img1, img2)
 
         fig = plt.figure(figsize=(16, 9))
         subPlot1 = fig.add_subplot(2,2,1)
-        plt.imshow(img1, cmap='gray'), plt.title('2D', fontsize=18)
+        plt.imshow(img1), plt.title('2D', fontsize=18)
 
         subPlot2 = fig.add_subplot(2,2,2)
-
-        plt.imshow(added_image, cmap='gray'), plt.title('Stack Transparent', fontsize=18)
+        plt.imshow(added_image), plt.title('Stack Transparent', fontsize=18)
 
         subPlot3 = fig.add_subplot(2,2,3)
-        plt.imshow(img2, cmap='gray'), plt.title('Depthmap', fontsize=18)
+        plt.imshow(img2), plt.title('Depthmap', fontsize=18)
 
         subPlot4 = fig.add_subplot(2,2,4)
-
+        plt.imshow(multiply_image(img1, img2)), plt.title('Multiply Image', fontsize=18)
 
         plt.annotate('Scroll up/down: rotate left/right; Arrow keys: strafe up/down/left/right',
                      xy=(0.5, 0), xytext=(0, 10),
@@ -466,26 +503,23 @@ if __name__ == '__main__':
         #     % retval
     else:
         paths = absoluteFilePaths(img_path)
-        img1 = 255 - cv2.imread(paths[0], 0)[:256, :]
-        img2 = 255 - cv2.imread(paths[0], 0)[512:, :]
+        img2 = 255 - cv2.imread(paths[0], 0)[:256, :]
+        img1 = 255 - cv2.imread(paths[0], 0)[512:, :]
 
-        background = img2
-        overlay = img1
-
-        added_image = cv2.addWeighted(background, 0.4, overlay, 0.1, 0)
-
+        added_image = add_image(img1, img2)
         fig = plt.figure(figsize=(16, 9))
         subPlot1 = fig.add_subplot(2, 2, 1)
-        plt.imshow(img1, cmap='gray'), plt.title('2D', fontsize=18)
+        plt.imshow(img1), plt.title('2D', fontsize=18)
 
         subPlot2 = fig.add_subplot(2, 2, 2)
 
-        plt.imshow(added_image, cmap='gray'), plt.title('Stack Transparent', fontsize=18)
+        plt.imshow(added_image), plt.title('Stack Transparent', fontsize=18)
 
         subPlot3 = fig.add_subplot(2, 2, 3)
-        plt.imshow(img2, cmap='gray'), plt.title('Depthmap', fontsize=18)
+        plt.imshow(img2), plt.title('Depthmap', fontsize=18)
 
         subPlot4 = fig.add_subplot(2, 2, 4)
+        plt.imshow(multiply_image(img1, img2)), plt.title('Multiply Image', fontsize=18)
         # Show the clickplot and print the return values
         # manager = plt.get_current_fig_manager()
         # manager.full_screen_toggle()
